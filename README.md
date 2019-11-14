@@ -1,4 +1,4 @@
-# -js-
+# -small js snake game-
 JavaScript贪吃蛇游戏源码
 js贪吃蛇增强版（源码）
 ![js贪吃蛇增强版](https://github.com/WaterOfbigRiver/-js-/blob/master/QQ%E6%88%AA%E5%9B%BE20191110211920.jpg)  
