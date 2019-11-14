@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>贪吃蛇</title>
+    <style>
+        .box {
+            height: 500px;
+            margin: 0 auto;
+            border: saddlebrown 3px solid;
+            position: absolute;
+            /*position: relative;*/
+
+        }
+
+        .map {
+            width: 500px;
+            height: 500px;
+            padding: 0;
+            /*border: saddlebrown 3px solid; !*会影响地图大小*!*/
+            background: #dddddd;
+            position: relative;
+            float: left;
+
+        }
+
+        #map {
+            margin: 0 auto;
+            border: 1px solid skyblue;
+        }
+
+        /*行*/
+        .row {
+            height: 20px;
+        }
+
+        /*列*/
+        .col {
+            height: 20px;
+            width: 20px;
+            box-sizing: border-box;
+            /*border: 1px solid whitesmoke;*/
+            border: 1px solid lightgray;
+            background: rgb(250, 250, 250);
+            float: left;
+        }
+
+        .rightBox {
+            width: 150px;
+            height: 500px;
+            border-left: saddlebrown 3px solid;
+            background: skyblue;
+            /*position: relative;*/
+            float: left;
+        }
+    </style>
+</head>
+<body>
+
+<button type="button" id="start">开始</button>
+<button type="button" id="downV">减速</button>
+<button type="button" id="upV">加速</button>
+<button type="button" id="reStart">重新开始</button>
+<button type="button" id="autoPlay">启用自动模式</button>
+<button type="button" id="touFood">投食</button>
+
+<div class="box">
+    <div class="map" id="map">
+    </div>
+
+    <div class="rightBox">
+        <!--参数显示框:-->
+        <!--怎么显示数据？-->
+        <p style="font-size:20px;color:black"> 得分:<span id="score" style="color:red">0</span></p>
+        <p style="font-size:20px;color:black"> 速度:<span id="Vsu" style="color:red">20</span></p>
+        <p style="font-size:20px;color:black"> 食物数:<span id="foodNum" style="color:red">0</span></p>
+        <p style="font-size:20px;color:black"> 模式:<span id="plyMode" style="color:red">手动</span></p>
+        <p style="font-size:20px;color:black"> 关卡:<span id="level" style="color:red">1</span></p>
+    </div>
+</div>
+
+<!-- 引入js -->
+<script type="text/javascript" src="Food.js"></script>
+<script type="text/javascript" src="Snake.js"></script>
+<script type="text/javascript" src="Map.js"></script>
+<script type="text/javascript" src="Game.js"></script>
+
+<script>
+
+    var timer; //全局变量，接收定时器
+
+
+    // =================================
+
+    var state = false; //游戏状态，默认是未开启状态
+    var timeV = 220; //默认速度，20毫秒移动一次
+    var gm = false;  //接收游戏对象
+    var AutoPlayMode = false; //自动模式
+
+    var scoreCount = 0;// 分数计数器,即吃了多少个蛋
+    var score = document.getElementById('score');  //获取分数标签
+    var VsuNow = 20; //速度值（默认值是20）
+    var Vsu = document.getElementById('Vsu');  //速度标签
+    var plyMode = document.getElementById('plyMode');  //模式标签
+    var foodNumCount = 0;
+    var fdNum = document.getElementById('foodNum');  //食物数量标签
+
+    // =================================
+
+
+    var start = document.getElementById('start');
+    var upV = document.getElementById('upV');
+    var dwV = document.getElementById('downV');
+    var reStart = document.getElementById('reStart');
+    var autPly = document.getElementById('autoPlay');
+    var touFood = document.getElementById('touFood');
+
+    //投食
+    touFood.onclick = function () {
+        console.log("手动投食！");
+
+        var fd = new Food(); //创建食物
+        fd.init(map);
+        // window.Food.init(map);
+
+
+    }
+    //自动模式按钮
+    autPly.onclick = function () {
+        if (AutoPlayMode == false) {
+            AutoPlayMode = true;
+            autPly.innerHTML = "停止自动模式";
+            plyMode.innerHTML = "自动模式";
+        } else {
+            AutoPlayMode = false;
+            autPly.innerHTML = "启用自动模式";
+            plyMode.innerHTML = "手动模式";
+        }
+    }
+    //开始按钮
+    start.onclick = function () {
+        if (state == false) { //之前未启动游戏，则开始游戏
+            if (gm == false) {
+                NewGame();
+                console.log("第一次开始，新开始游戏");
+            } else {
+                startGame();
+                console.log("非第一次开始，继续游戏");
+            }
+        } else { //已经启动了游戏，则停止
+            pauseGame();
+            console.log("暂停游戏");
+        }
+    }
+
+    //重新开始新游戏
+    reStart.onclick = NewGame;
+    //加速——减小间隔时间
+    upV.onclick = function () {
+        //先变值
+        timeV -= 20;
+        // if (timeV > 40) {
+        //     timeV -= 20;
+        // } else {
+        //     timeV -= 10;
+        // }
+        // timeV = parseInt(timeV *0.9);//减小10%
+        //先变值，后验收
+        if (timeV < 20) {
+            timeV = 20;
+        }
+        // 计算速度
+        VsuNow += 1;
+        //最低值是1
+        if (VsuNow > 30) {
+            VsuNow = 30;
+        }
+        Vsu.innerHTML = VsuNow;
+        console.log("加速！timeV=" + timeV + ", VsuNow=" + VsuNow);
+
+        //变速后，需要重新传递时间
+        pauseGame();
+        startGame();
+    }
+    //减速——增加间隔时间
+    dwV.onclick = function () {
+
+        //先变值
+        timeV += 20;
+        // if (timeV >500) {
+        //     timeV += 40;
+        // } else {
+        //     timeV += 20;
+        // }
+        // timeV = parseInt(timeV *1.1);//增加10%
+        //后验收
+        if (timeV > 600) { //一秒移动一次
+            timeV = 600;
+        }
+        // 计算速度
+        VsuNow -= 1;
+        //最低值是1
+        if (VsuNow < 1) {
+            VsuNow = 1;
+        }
+        Vsu.innerHTML = VsuNow;
+        console.log("减速！timeV=" + timeV + ", VsuNow=" + VsuNow);
+
+        //变速后，需要重新传递时间
+        pauseGame();
+        startGame();
+    }
+
+    function NewGame() {
+        //测试输出
+        console.log("测试 newgame删除前 timer=" + timer); //
+
+        //先清除定时器
+        clearInterval(timer);
+        scoreCount = 0;// 分数计数器清零
+        // 更新当前的分数
+        score.innerHTML = scoreCount;
+
+        // 新建游戏
+        //初始化游戏对象
+        gm = new Game(document.querySelector(".map"));
+        gm.init();
+
+        start.innerHTML = "暂停";
+
+        //改变状态，正在游戏中
+        state = true;
+
+        //测试输出
+        console.log("测试 gm=" + gm); //obj obj
+        //测试输出
+        console.log("测试 newgame删除后 timer=" + timer); //
+    }
+
+    function startGame() {
+
+        console.log("时间间隔（决定速度）timeV=" + timeV);
+
+        //测试输出
+        console.log("测试 startGame删除前 timer=" + timer); //
+
+
+        //先清除定时器
+        clearInterval(timer);
+
+        //测试输出
+        console.log("测试 startGame删除后 timer=" + timer); //
+
+        gm.runSnake(gm.food, gm.map); //重新移动
+        start.innerHTML = "暂停";
+
+        //改变状态，正在游戏中
+        state = true;
+
+        //测试输出
+        console.log("测试 startGame再新建后 timer=" + timer); //
+    }
+
+    function pauseGame() {
+        clearInterval(timer);
+        start.innerHTML = "开始";
+
+        //改变状态，未启动游戏
+        state = false;
+    }
+
+    console.log("gm=" + gm);
+    console.log("timeV=" + timeV);
+
+</script>
+</body>
+</html>
