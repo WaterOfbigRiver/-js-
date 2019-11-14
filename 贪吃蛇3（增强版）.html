@@ -102,9 +102,6 @@
         //为原型添加初始化的方法（作用：在页面上显示这个食物）
         //因为食物要在地图上显示，所以，需要地图的这个参数（map---就是页面上的.class=map的这个div）
         Food.prototype.init = function (map) {
-            //删除食物,每次初始化食物时都将之前的删除，确保只有一个食物; 私有函数，外部无法访问
-            // RemoveFood(); //旧版，删除所有食物
-
 
             //创建div
             var div = document.createElement('div'); //创建元素
@@ -133,23 +130,34 @@
             // console.log("食物x坐标px:" + this.x + " 食物y坐标px:" + this.y);
             // console.log("食物x坐标:" + (this.x / this.width) + " 食物y坐标:" + (this.y / this.height));
 
+            console.log("生成食物");
+
             div.style.left = this.x + "px";
             div.style.top = this.y + 'px';
             //把div加入都elements中
             elements.push(div);
         };
 
-        //私有函数（外部不可访问），--删除食物
-        function RemoveFood() {
+        //--删除所有食物
+        Food.prototype.Remove = function () {
+
+            console.log("删除所有食物函数中:---> elements.length=" + elements.length);
+
             // elements数组中有这个食物
             for (var i = 0; i < elements.length; i++) {
                 var ele = elements[i];
                 // 找到这个子元素的父级元素，然后删除这个子元素
                 ele.parentNode.removeChild(ele); //即地图上删除食物
                 //再次把elements中的这个子元素也要删除 --数组中删除食物
-                elements.splice(i, 1); //splice是删除函数
+                // elements.splice(i, 1); //splice是删除函数，只删一个
+
+                console.log("删除地图中的所有食物函数中，i="+i+"，elements.length=" + elements.length);
             }
+
+            elements.splice(0, elements.length); //splice是删除函数 ，全删
+            console.log("删除数组值所有食物函数中，执行全删！，elements.length=" + elements.length);
         }
+
 
         function RemoveFood2(el) { //删除指定的食物（多个食物测试）
             // elements数组中有这个食物
@@ -438,7 +446,8 @@
         Game.prototype.init = function () {
             //初始化游戏
 
-            //初始化食物
+            this.food.Remove(); //删除所有存在的食物
+            //初始化食物（创建食物）
             this.food.init(this.map);
             // 初始化小蛇
             this.snake.init(this.map);
@@ -804,6 +813,8 @@
         //先清除定时器
         clearInterval(timer);
         scoreCount = 0;// 分数计数器清零
+        // 更新当前的分数
+        score.innerHTML = scoreCount;
 
         // 新建游戏
         //初始化游戏对象
